@@ -1,0 +1,70 @@
+BUILD:
+
+  $: mkdir build
+  $: cd build
+  $: cmake ..
+  $: make
+
+If uhd lib are in non standard paths, use something similar:
+
+  $: cmake -DUHD_LIBRARIES=/usr/lib/x86_64-linux-gnu/libuhd.so.3.14.1 \
+           -DUHD_INCLUDE_DIRS=/usr/include ..
+
+
+USAGE: This versio of the jammer is compatible with SDR with two chains, i.e.,
+       USRP B210. Both chains will be used for improving jamming capabilities.
+       It creates a multiuhd device (with two channels) and will use both for
+       transmitting "noisy" signal at the same frequency over time.
+       There are three modes, it can:
+         1) generate a lte frame structure;
+         2) use existing data that loads from files;
+         3) generate random data.
+
+Parameters that are common to the three modes:
+
+   --freqs	list of frequencies where it will hop;
+   --hoptime	number of millisecond before retuning radio;
+   --gain	gain of the radio chains;
+   --subdev	subdevices that will be added to the multiuhd device;
+   --args	UHD style parameter for specifying which device to use;
+
+
+Examples for the three modes and specific paramters:
+
+1) generate a lte frame structure (structure only, random content):
+
+   $: jammer2chains --freqs 1820000000,2450000000 --gain 70 \
+                    --args "serial=3094D6E" --subdev "A:A A:B" \
+                    --channels "0,1" --hoptime 5000 \
+                    --lte "4,60,200"
+
+LTE parameters are:
+   - 4   => multiplier with respect to lte base frequency, i.e., with 4 it
+           generates a 25PRB structure;
+   - 60  => number of contiguous carriers that it populates;
+   - 200 => number of half-subframes before performing microhop (within current
+            lte channel, i.e., 200 means 100ms).
+
+2) use existing data that loads from files:
+
+   $: jammer2chains --freqs 5785000000,5240000000 --gain 70 \
+                    --args "type=b200" --subdev "A:A A:B" \
+                    --channels "0,1" --hoptime 100 \
+                    --file1 /path/to/file1.dat --file2 /path/to/file2.dat \
+                    --rate 20000000
+
+Parameters --file1 and --file2 point to files that contains data encoded as
+shorts, little-endian. The two files must have the same length.
+Parameter --rate specificies the number of samples per second.
+
+It would be better to use two different datafiles higly incorrelated (same
+length).
+
+3) generate random data: the jammer autonomously generates random samples
+
+   $: jammer2chains --freqs 5745000000,5240000000,5280000000 --gain 70 \
+                    --args "serial=3094D6E" --subdev "A:A A:B" \
+                    --channels "0,1" --hoptime 240 \
+                    --rate 20000000
+
+Parameter --rate specificies the number of samples per second.
